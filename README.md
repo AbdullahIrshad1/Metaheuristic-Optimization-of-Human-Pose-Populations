@@ -3,82 +3,91 @@ Refining 3D human pose estimation using metaheuristic algorithms (GA, PSO, ACO, 
 
 An advanced AI project focused on refining 3D human pose estimations using population-based metaheuristic optimization algorithms. The system enhances baseline predictions from motion capture data by minimizing pose errors with evolutionary algorithms such as Genetic Algorithm (GA), Particle Swarm Optimization (PSO), Ant Colony Optimization (ACO), and Grey Wolf Optimizer (GWO).
 
-📌 Project Overview
-This project improves the accuracy of human pose estimation models by refining predicted pose populations through metaheuristic optimization. It evaluates and compares multiple bio-inspired optimization strategies to align predicted poses more closely with ground truth data from motion capture systems.
+## 📌 Project Overview
 
-We utilize real motion datasets (GTpose.mat, PopulationPoses.mat) and develop a robust evaluation framework incorporating both numerical metrics and qualitative visualizations.
+This advanced AI project enhances the accuracy of 3D human pose estimation by refining predicted pose populations using population-based metaheuristic optimization techniques. Baseline motion capture predictions are improved by minimizing pose estimation errors via Genetic Algorithm (GA), Particle Swarm Optimization (PSO), Ant Colony Optimization (ACO), and Grey Wolf Optimizer (GWO).  
+The system uses real-world motion capture datasets and a multi-factor fitness function to optimize predicted human poses and visualize the improvements through 3D plots and clustering analysis.
 
-🚀 Objectives
-Apply and compare four metaheuristic algorithms for human pose refinement:
+---
 
-Genetic Algorithm (GA)
+## 🚀 Objectives
 
-Particle Swarm Optimization (PSO)
+| Goal | Description |
+|------|-------------|
+| **🔁 Multi-Algorithm Optimization** | Apply and compare four bio-inspired metaheuristic algorithms for human pose refinement. |
+| **📉 Error Minimization** | Use custom fitness metrics to reduce Mean Joint Position Error (MJPE) and increase keypoint accuracy. |
+| **📊 Visual Improvement** | Overlay 3D skeletons to compare before vs. after optimization performance. |
+| **🔬 Cluster-wise Evaluation** | Group and analyze optimized pose populations based on performance similarity. |
 
-Ant Colony Optimization (ACO)
+---
 
-Grey Wolf Optimizer (GWO)
+## 📂 Dataset
 
-Minimize pose deviation using a custom fitness function
+| File | Description |
+|------|-------------|
+| `GTpose.mat` | Ground truth 3D joint positions (motion capture-based) |
+| `PopulationPoses.mat` | Initial population of estimated poses |
+| **Format** | MATLAB `.mat` files processed via Python using `SciPy` or MATLAB Engine API |
 
-Visualize pose improvement before and after optimization
+---
 
-Perform cluster-wise analysis of optimized poses
+## ⚙️ Optimization Metrics
 
-📂 Dataset
-GTpose.mat — Ground truth 3D joint positions
+The optimization process is guided by a composite fitness function integrating:
 
-PopulationPoses.mat — Initial population of candidate poses
+- **MJPE** – Mean Joint Position Error  
+- **PCK** – Percentage of Correct Keypoints  
+- **PEA** – Pose Estimation Accuracy  
 
-Format: MATLAB .mat files (processed using SciPy / MATLAB engine)
+These ensure both numerical precision and visual fidelity of the refined human poses.
 
-⚙️ Optimization Metrics
-The optimization is guided using a multi-factor fitness function based on:
+---
 
-Mean Joint Position Error (MJPE)
+## 🧠 Algorithms Used
 
-Percentage of Correct Keypoints (PCK)
+| Algorithm | Description |
+|-----------|-------------|
+| **🧬 Genetic Algorithm (GA)** | Evolution-based search using crossover and mutation operators |
+| **🌪 Particle Swarm Optimization (PSO)** | Particle-based search using velocity updates for convergence |
+| **🐜 Ant Colony Optimization (ACO)** | Simulates ant pathfinding via pheromone-based reinforcement |
+| **🐺 Grey Wolf Optimizer (GWO)** | Mimics social hierarchy and hunting behavior of grey wolves |
 
-Pose Estimation Accuracy (PEA)
+---
 
-These ensure the optimized poses are not only numerically accurate but also visually aligned with the ground truth.
+## 🖼️ Visual Analysis
 
-📈 Algorithms Used
-Algorithm	Highlights
-GA (Genetic Algorithm)	Evolution-inspired; crossover and mutation for global search
-PSO (Particle Swarm Optimization)	Particle-based velocity updates for fast convergence
-ACO (Ant Colony Optimization)	Path-optimization with pheromone trail dynamics
-GWO (Grey Wolf Optimizer)	Leadership hierarchy-based search behavior
+| Visualization | Description |
+|---------------|-------------|
+| **🎯 3D Pose Overlays** | Side-by-side skeleton comparisons before and after optimization |
+| **📈 Convergence Plots** | Graphical analysis of algorithm convergence over generations |
+| **🧩 Clustering Analysis** | Group optimized poses by performance metrics using unsupervised clustering |
 
-🖼️ Visual Analysis
-3D pose skeleton overlays (before vs. after)
+---
 
-Comparative convergence plots across algorithms
+## 🧪 Evaluation Pipeline
 
-Clustering of optimized poses by performance groups
+1. **Data Loading** – Read and preprocess `.mat` files  
+2. **Population Initialization** – Retrieve candidate poses for optimization  
+3. **Fitness Evaluation** – Compute MJPE, PCK, and PEA  
+4. **Optimization Execution** – Run GA / PSO / ACO / GWO on population  
+5. **Visualization & Comparison** – Generate plots and overlay results
 
-🧪 Evaluation Pipeline
-Data Loading: Read and preprocess .mat files
+---
 
-Population Initialization: Retrieve candidate poses
+## 🛠️ Tech Stack
 
-Fitness Evaluation: MJPE + PCK + PEA metrics
+- **Languages**: Python, MATLAB (for preprocessing)
+- **Libraries**: NumPy, SciPy, matplotlib, scikit-learn
+- **Optimization Frameworks**: Custom implementations for GA, PSO, ACO, GWO
 
-Optimization Execution: Apply selected algorithm
+---
 
-Visualization & Comparison: Output overlays and stats
+## ✨ Key Contributions
 
-🛠️ Tech Stack
-Languages: Python, MATLAB (for dataset prep)
-
-Libraries: NumPy, SciPy, matplotlib, scikit-learn
-
-Optimization Frameworks: Custom implementations for GA, PSO, ACO, GWO
-
-🧠 Key Contributions
-Designed a flexible fitness function to evaluate pose accuracy
-
-Developed independent pipelines for each optimization strategy
+- Designed a flexible fitness function to balance multiple error metrics  
+- Developed modular pipelines for each optimization strategy  
+- Performed comparative benchmarking across all algorithms  
+- Visualized improvements with comprehensive 3D analysis and clustering
 
 Performed comparative benchmarking across algorithms
 
