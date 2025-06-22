@@ -1,0 +1,265 @@
+%% Genetic Algorithm for Human Pose Optimization
+% This script implements a genetic algorithm to optimize a population of
+% human poses to better match ground truth pose data
+
+% Clear workspace and close figures
+clear all;
+close all;
+clc;
+
+%% Load Data
+% Load ground truth poses and initial population
+try
+    load('GTpose.mat');  % Ground truth pose data
+    load('PopulationPose.mat');  % Initial population
+    disp('Data loaded successfully.');
+catch
+    error('Error loading data files. Make sure GTpose.mat and PopulationPoses.mat are in the current directory.');
+end
+
+%% Parameters for Genetic Algorithm
+params.populationSize = 100;  % Size of population (adjust based on your initial population)
+params.maxGenerations = 100;  % Maximum number of generations
+params.crossoverProbability = 0.8;  % Probability of crossover
+params.mutationProbability = 0.1;  % Probability of mutation
+params.eliteCount = 5;  % Number of elites to preserve in each generation
+params.tournamentSize = 5;  % Tournament selection size
+
+%% Initialize Variables
+% Assuming PopulationPoses is a matrix where each row represents a pose
+% and columns represent joint coordinates (x,y,z for each joint)
+if ~exist('PopulationPoses', 'var')
+    error('PopulationPoses not found in the loaded data');
+end
+
+if ~exist('GTpose', 'var')
+    error('GTpose not found in the loaded data');
+end
+
+% Initialize population if not already loaded
+population = PopulationPoses;
+[populationSize, dimensions] = size(population);
+
+% Adjust params if needed
+params.populationSize = populationSize;
+
+% Initialize storage for results
+bestFitness = zeros(params.maxGenerations, 1);
+meanFitness = zeros(params.maxGenerations, 1);
+bestPose = zeros(params.maxGenerations, dimensions);
+
+% Timer for computational efficiency
+tic;
+
+%% Start Genetic Algorithm
+fprintf('Starting Genetic Algorithm for Human Pose Optimization...\n');
+
+% Initial fitness evaluation
+fitness = evaluateFitness(population, GTpose);
+[bestFitVal, bestIdx] = min(fitness);
+bestPose(1, :) = population(bestIdx, :);
+bestFitness(1) = bestFitVal;
+meanFitness(1) = mean(fitness);
+
+% Main GA loop
+for generation = 2:params.maxGenerations
+    % Selection
+    parents = selection(population, fitness, params);
+    
+    % Crossover
+    offspring = crossover(parents, params);
+    
+    % Mutation
+    offspring = mutation(offspring, params);
+    
+    % Elitism - preserve the best individuals
+    [~, eliteIndices] = sort(fitness);
+    elite = population(eliteIndices(1:params.eliteCount), :);
+    
+    % Create new population
+    population(eliteIndices(1:params.eliteCount), :) = elite;
+    population(eliteIndices(params.eliteCount+1:end), :) = offspring(1:populationSize-params.eliteCount, :);
+    
+    % Evaluate fitness of new population
+    fitness = evaluateFitness(population, GTpose);
+    
+    % Store best and mean fitness
+    [bestFitVal, bestIdx] = min(fitness);
+    bestPose(generation, :) = population(bestIdx, :);
+    bestFitness(generation) = bestFitVal;
+    meanFitness(generation) = mean(fitness);
+    
+    % Display progress
+    if mod(generation, 10) == 0
+        fprintf('Generation %d: Best Fitness = %.4f, Mean Fitness = %.4f\n', ...
+            generation, bestFitness(generation), meanFitness(generation));
+    end
+end
+
+% Record execution time
+executionTime = toc;
+fprintf('Genetic Algorithm completed in %.2f seconds.\n', executionTime);
+
+%% Evaluation and Results
+% Find the best solution from all generations
+[finalBestFitness, bestGeneration] = min(bestFitness);
+finalBestPose = bestPose(bestGeneration, :);
+
+% Calculate metrics
+[metrics] = calculateMetrics(finalBestPose, GTpose);
+
+% Display results
+fprintf('\n===== Genetic Algorithm Results =====\n');
+fprintf('Best Generation: %d\n', bestGeneration);
+fprintf('Best Fitness: %.4f\n', finalBestFitness);
+fprintf('Mean Joint Position Error (MJPE): %.4f\n', metrics.MJPE);
+fprintf('Percentage of Correct Keypoints (PCK): %.2f%%\n', metrics.PCK*100);
+fprintf('Pose Error Area (PEA): %.4f\n', metrics.PEA);
+fprintf('Execution Time: %.2f seconds\n', executionTime);
+
+%% Plot Results
+figure;
+subplot(2,1,1);
+plot(1:params.maxGenerations, bestFitness, 'b-', 'LineWidth', 2);
+hold on;
+plot(1:params.maxGenerations, meanFitness, 'r--', 'LineWidth', 1);
+xlabel('Generation');
+ylabel('Fitness (Error)');
+title('Genetic Algorithm Performance');
+legend('Best Fitness', 'Mean Fitness');
+grid on;
+
+subplot(2,1,2);
+visualizePoses(finalBestPose, GTpose, 'Genetic Algorithm Pose Optimization');
+
+% Save results
+save('GA_Results.mat', 'finalBestPose', 'bestFitness', 'meanFitness', 'metrics', 'executionTime');
+
+%% Helper Functions
+
+function fitness = evaluateFitness(population, GTpose)
+    % Calculate fitness as the sum of squared distances between joints
+    % Lower fitness is better (representing less error)
+    
+    populationSize = size(population, 1);
+    fitness = zeros(populationSize, 1);
+    
+    for i = 1:populationSize
+        % Reshape pose vectors into 3D joint coordinates if needed
+        % Assuming each pose is a vector of joint coordinates [x1,y1,z1,x2,y2,z2,...]
+        candidatePose = population(i, :);
+        
+        % Calculate Euclidean distance for each joint
+        % Reshape the pose vectors to [numJoints x 3] if needed
+        numJoints = length(candidatePose) / 3;
+        reshapedCandidate = reshape(candidatePose, [3, numJoints])';
+        reshapedGT = reshape(GTpose, [3, numJoints])';
+        
+        % Calculate joint-wise distances
+        jointDistances = sqrt(sum((reshapedCandidate - reshapedGT).^2, 2));
+        
+        % Sum of squared distances as fitness
+        fitness(i) = sum(jointDistances.^2);
+    end
+end
+
+function parents = selection(population, fitness, params)
+    % Tournament selection
+    populationSize = size(population, 1);
+    parents = zeros(size(population));
+    
+    for i = 1:populationSize
+        % Select random candidates for tournament
+        candidates = randperm(populationSize, params.tournamentSize);
+        [~, idx] = min(fitness(candidates));
+        winner = candidates(idx);
+        parents(i, :) = population(winner, :);
+    end
+end
+
+function offspring = crossover(parents, params)
+    % Perform crossover to create offspring
+    [numParents, dimensions] = size(parents);
+    offspring = parents; % Initialize with parents
+    
+    for i = 1:2:numParents-1
+        if rand < params.crossoverProbability
+            % Select crossover point(s)
+            % Using two-point crossover
+            points = sort(randperm(dimensions, 2));
+            
+            % Perform crossover
+            temp = offspring(i, points(1):points(2));
+            offspring(i, points(1):points(2)) = offspring(i+1, points(1):points(2));
+            offspring(i+1, points(1):points(2)) = temp;
+        end
+    end
+end
+
+function offspring = mutation(offspring, params)
+    % Perform mutation
+    [numOffspring, dimensions] = size(offspring);
+    
+    for i = 1:numOffspring
+        for j = 1:dimensions
+            if rand < params.mutationProbability
+                % Gaussian mutation
+                offspring(i, j) = offspring(i, j) + randn * 0.1;
+            end
+        end
+    end
+end
+
+function [metrics] = calculateMetrics(pose, GTpose)
+    % Calculate evaluation metrics
+    
+    % Reshape poses if needed
+    numJoints = length(pose) / 3;
+    reshapedPose = reshape(pose, [3, numJoints])';
+    reshapedGT = reshape(GTpose, [3, numJoints])';
+    
+    % Mean Joint Position Error (MJPE)
+    jointDistances = sqrt(sum((reshapedPose - reshapedGT).^2, 2));
+    metrics.MJPE = mean(jointDistances);
+    
+    % Percentage of Correct Keypoints (PCK)
+    % Using a threshold of 0.2 (can be adjusted)
+    threshold = 0.2;
+    metrics.PCK = sum(jointDistances < threshold) / numJoints;
+    
+    % Pose Error Area (PEA)
+    % Approximated as the area of error across all joints
+    metrics.PEA = sum(jointDistances);
+    
+    % Additional metrics can be added here
+end
+
+function visualizePoses(candidatePose, GTpose, titleStr)
+    % Visualize the ground truth and optimized poses
+    numJoints = length(candidatePose) / 3;
+    
+    % Reshape poses
+    candidatePose = reshape(candidatePose, [3, numJoints])';
+    GTpose = reshape(GTpose, [3, numJoints])';
+    
+    % Create 3D plot
+    plot3(GTpose(:,1), GTpose(:,2), GTpose(:,3), 'ro', 'MarkerSize', 8, 'LineWidth', 2);
+    hold on;
+    plot3(candidatePose(:,1), candidatePose(:,2), candidatePose(:,3), 'bx', 'MarkerSize', 8, 'LineWidth', 2);
+    
+    % Add lines connecting joints (if joint connectivity is provided)
+    % Example: For a simple skeleton, connect nearby joints
+    % This is a placeholder - modify according to your skeleton structure
+    for i = 1:(numJoints-1)
+        line([GTpose(i,1), GTpose(i+1,1)], [GTpose(i,2), GTpose(i+1,2)], [GTpose(i,3), GTpose(i+1,3)], 'Color', 'r');
+        line([candidatePose(i,1), candidatePose(i+1,1)], [candidatePose(i,2), candidatePose(i+1,2)], [candidatePose(i,3), candidatePose(i+1,3)], 'Color', 'b');
+    end
+    
+    xlabel('X');
+    ylabel('Y');
+    zlabel('Z');
+    title(titleStr);
+    legend('Ground Truth', 'Optimized Pose');
+    grid on;
+    axis equal;
+end
